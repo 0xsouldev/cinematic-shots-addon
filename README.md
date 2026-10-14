@@ -4,7 +4,13 @@ A ReShade add-on (`.addon64`) for lining up and capturing cinematic shots in Rob
 
 It loads into Unishade's own process, alongside ReShade. Unishade captures the Roblox window with Windows Graphics Capture and runs ReShade on its own window, so nothing here is injected into or reads from the Roblox client.
 
-Right now it only proves the add-on loads: it adds a **Cinematic** tab to ReShade's menu.
+## Features
+
+**Framing guides.** Letterbox bars and rule-of-thirds lines drawn over the picture to help line up shots. Press **Ctrl+F6** to show or hide them while driving. In the **Cinematic** section of ReShade's Add-ons tab you can pick the aspect ratio (2.39:1, 2.00:1, 1.85:1, 16:9, 4:3 or 9:16 vertical), turn the bars or lines on and off, and set how dark the bars are. Settings are saved in `ReShade.ini` under `[CINEMATIC_SHOTS]`.
+
+The guides are for framing only: Unishade's screenshots leave them out. A recording that captures Unishade's window, such as OBS window capture, will include them, so hide them with Ctrl+F6 before recording.
+
+Ctrl+F6 was picked because Unishade doesn't use it (its keys are Home, F7, Ctrl+F8, Ctrl+F9, Ctrl+F10 and Ctrl+PageUp/PageDown). The key is read in every app while Unishade runs, so pressing Ctrl+F6 elsewhere also toggles the guides.
 
 ## Requirements
 
@@ -28,7 +34,7 @@ GitHub Actions also builds it on every push; download `CinematicShots.addon64` f
 1. Close Unishade.
 2. Copy `CinematicShots.addon64` into Unishade's folder, next to `Unishade.exe` and `dxgi.dll`. Unless you picked another folder in Setup, that's `%LOCALAPPDATA%\Programs\Unishade`.
 3. Start Unishade, open its menu, then open ReShade's menu from there. Unishade blocks ReShade's own menu key, so its menu is the way in.
-4. The **Add-ons** tab should list **Cinematic Shots**, and a **Cinematic** tab should appear.
+4. The **Add-ons** tab should list **Cinematic Shots**, with a **Cinematic** section further down holding its settings.
 
 If it doesn't show up, check `ReShade.log` in the same folder for the line `Searching for add-ons` and any error after it.
 
