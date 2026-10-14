@@ -21,7 +21,7 @@ cmake --build build --config Release
 
 The add-on is at `build\Release\CinematicShots.addon64`. CMake downloads the ReShade and Dear ImGui headers it needs and checks their SHA-256.
 
-GitHub Actions also builds it on every push; the file is in the run's `CinematicShots-addon64` artifact.
+GitHub Actions also builds it on every push; download `CinematicShots.addon64` from the run's **Artifacts**.
 
 ## Install
 
