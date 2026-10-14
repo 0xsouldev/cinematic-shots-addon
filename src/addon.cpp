@@ -36,6 +36,7 @@ struct Settings
     bool guides = true;
     bool letterbox = true;
     bool thirds = true;
+    bool numbers = false;
     int ratio = 0;
     int barOpacity = 100; // percent
 };
@@ -49,6 +50,7 @@ void Load()
     reshade::get_config_value(nullptr, kSection, "Guides", settings.guides);
     reshade::get_config_value(nullptr, kSection, "Letterbox", settings.letterbox);
     reshade::get_config_value(nullptr, kSection, "Thirds", settings.thirds);
+    reshade::get_config_value(nullptr, kSection, "Numbers", settings.numbers);
     reshade::get_config_value(nullptr, kSection, "AspectRatio", settings.ratio);
     reshade::get_config_value(nullptr, kSection, "BarOpacity", settings.barOpacity);
     if (settings.ratio < 0 || settings.ratio >= static_cast<int>(std::size(kRatios)))
@@ -63,6 +65,7 @@ void Save()
     reshade::set_config_value(nullptr, kSection, "Guides", settings.guides);
     reshade::set_config_value(nullptr, kSection, "Letterbox", settings.letterbox);
     reshade::set_config_value(nullptr, kSection, "Thirds", settings.thirds);
+    reshade::set_config_value(nullptr, kSection, "Numbers", settings.numbers);
     reshade::set_config_value(nullptr, kSection, "AspectRatio", settings.ratio);
     reshade::set_config_value(nullptr, kSection, "BarOpacity", settings.barOpacity);
 }
@@ -137,6 +140,19 @@ void DrawGuides(reshade::api::effect_runtime*)
             draw->AddLine(ImVec2(x, min.y), ImVec2(x, max.y), line, 1.0f);
             draw->AddLine(ImVec2(min.x, y), ImVec2(max.x, y), line, 1.0f);
         }
+
+        // Squares numbered 1 to 9 like a phone keypad: left to right, top to bottom.
+        if (settings.numbers)
+        {
+            for (int row = 0; row < 3; ++row)
+                for (int col = 0; col < 3; ++col)
+                {
+                    const char label[2] = { static_cast<char>('1' + row * 3 + col), '\0' };
+                    const ImVec2 pos(min.x + width * col / 3.0f + 8.0f, min.y + height * row / 3.0f + 6.0f);
+                    draw->AddText(ImVec2(pos.x + 1.0f, pos.y + 1.0f), IM_COL32(0, 0, 0, 160), label);
+                    draw->AddText(pos, IM_COL32(255, 255, 255, 200), label);
+                }
+        }
     }
 }
 
@@ -151,6 +167,10 @@ void DrawCinematicTab(reshade::api::effect_runtime*)
     changed |= ImGui::Checkbox("Letterbox bars", &settings.letterbox);
     ImGui::SameLine();
     changed |= ImGui::Checkbox("Rule-of-thirds lines", &settings.thirds);
+    ImGui::SameLine();
+    ImGui::BeginDisabled(!settings.thirds);
+    changed |= ImGui::Checkbox("Number the squares", &settings.numbers);
+    ImGui::EndDisabled();
 
     if (ImGui::BeginCombo("Aspect ratio", kRatios[settings.ratio].name))
     {
