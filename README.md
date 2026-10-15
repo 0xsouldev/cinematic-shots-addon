@@ -23,6 +23,10 @@ The guides are for framing only: Unishade's screenshots leave them out. A record
 
 Unlike the guides, everything this effect does ends up in your screenshots and recordings.
 
+**Daily Drive effect.** `DailyDrive.fx` is the light, cheap one for just playing: one pass with contrast-adaptive sharpening (after AMD's FidelityFX CAS), a colour look, vibrance, warmth, contrast and exposure. Its looks come from our own LUTs.
+
+**LUTs.** Nine colour looks stored as LUTs in `textures/`: four for everyday play (Clean daylight, Warm evening, Cool night, Punchy) and the five Cinematic Look grades. `CinematicShots_LUTs.png` holds them all for Daily Drive; each one is also a standard 1024x32 strip (`CinematicShots_<Name>.png`) that ReShade's own `LUT.fx` can use by setting `fLUT_TextureName` to its file name. `tools/luts/make_luts.py` makes them, so a look can be tweaked there and rebuilt.
+
 Ctrl+F6 and Ctrl+F5 were picked because Unishade doesn't use them (its keys are Home, F7, Ctrl+F8, Ctrl+F9, Ctrl+F10 and Ctrl+PageUp/PageDown). The keys are read in every app while Unishade runs, so pressing them elsewhere works too.
 
 ## Requirements
@@ -53,14 +57,14 @@ If it doesn't show up, check `ReShade.log` in the same folder for the line `Sear
 
 To remove it, delete the file.
 
-### Install the effect
+### Install the effects
 
-1. Download `CinematicLook.fx` from the same Actions run (or take it from `shaders/` in this repo).
-2. Copy it into `reshade-shaders\Shaders` inside Unishade's folder (`%LOCALAPPDATA%\Programs\Unishade\reshade-shaders\Shaders`). Unishade's Setup keeps effects you add there when it updates; uninstalling only removes them if you tick the option to delete your settings.
-3. In ReShade's **Home** tab, tick **Cinematic Look (Cinematic Shots)** and drag it to the bottom of the list, so the grain and bars go over every other effect.
-4. Save it into a preset, and link that preset to a shot in the shot list if you like.
+1. Download **CinematicShots-effects** from the same Actions run and unzip it. It has a `Shaders` and a `Textures` folder.
+2. Copy both into `reshade-shaders` inside Unishade's folder (`%LOCALAPPDATA%\Programs\Unishade\reshade-shaders`), merging with the folders already there. Unishade's Setup keeps effects you add there when it updates; uninstalling only removes them if you tick the option to delete your settings.
+3. In ReShade's **Home** tab, tick **Daily Drive (Cinematic Shots)** for everyday play, or **Cinematic Look (Cinematic Shots)** for filming. Drag Cinematic Look to the bottom of the list, so the grain and bars go over every other effect.
+4. Save each into its own preset, and link the filming one to a shot in the shot list if you like.
 
-`tools/fxcheck` builds ReShade 6.8.0's own effect compiler on Linux; CI uses it to check every effect in `shaders/` compiles, and runs the generated code through glslang and spirv-val.
+`tools/fxcheck` builds ReShade 6.8.0's own effect compiler on Linux; CI uses it to check every effect in `shaders/` compiles, and runs the generated code through glslang and spirv-val. CI also checks the LUT images match `tools/luts/make_luts.py`.
 
 ## Versions
 
