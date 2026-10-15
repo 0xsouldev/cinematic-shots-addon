@@ -6,9 +6,9 @@ It loads into Unishade's own process, alongside ReShade. Unishade captures the R
 
 ## Features
 
-**Framing guides.** Letterbox bars and rule-of-thirds lines drawn over the picture to help line up shots. Press **Ctrl+F6** to show or hide them while driving. In the **Cinematic** section of ReShade's Add-ons tab you can pick the aspect ratio (2.39:1, 2.00:1, 1.85:1, 16:9, 4:3 or 9:16 vertical), turn the bars or lines on and off, and set how dark the bars are. Settings are saved in `ReShade.ini` under `[CINEMATIC_SHOTS]`.
+**Framing guides.** Letterbox bars and rule-of-thirds lines drawn over the picture to help line up shots. Press **Ctrl+F6** to show or hide them while driving. In the **Cinematic** section of ReShade's Add-ons tab you can pick the aspect ratio (2.39:1, 2.00:1, 1.85:1, 16:9, 4:3 or 9:16 vertical), turn the bars or lines on and off, number the nine squares 1 to 9 (left to right, top to bottom) so you can talk about where things sit, and set how dark the bars are. Settings are saved in `ReShade.ini` under `[CINEMATIC_SHOTS]`.
 
-The guides are for framing only: Unishade's screenshots leave them out. A recording that captures Unishade's window, such as OBS window capture, will include them, so hide them with Ctrl+F6 before recording.
+The guides are for framing only: Unishade's screenshots leave them out. A recording that captures Unishade's window, such as OBS window capture, will include them, so hide them with Ctrl+F6 before recording. To share a frame with the grid on it, use Windows' Snipping Tool (Win+Shift+S).
 
 Ctrl+F6 was picked because Unishade doesn't use it (its keys are Home, F7, Ctrl+F8, Ctrl+F9, Ctrl+F10 and Ctrl+PageUp/PageDown). The key is read in every app while Unishade runs, so pressing Ctrl+F6 elsewhere also toggles the guides.
 
