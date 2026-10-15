@@ -27,6 +27,17 @@ Unlike the guides, everything this effect does ends up in your screenshots and r
 
 **LUTs.** Nine colour looks stored as LUTs in `textures/`: four for everyday play (Clean daylight, Warm evening, Cool night, Punchy) and the five Cinematic Look grades. `CinematicShots_LUTs.png` holds them all for Daily Drive; each one is also a standard 1024x32 strip (`CinematicShots_<Name>.png`) that ReShade's own `LUT.fx` can use by setting `fLUT_TextureName` to its file name. `tools/luts/make_luts.py` makes them, so a look can be tweaked there and rebuilt.
 
+**Photo FX.** `PhotoFX.fx` adds six photographer tricks, each its own effect you can tick on:
+
+- **Long Exposure:** light trails or ghosting, like leaving the shutter open. Hold the camera still and let traffic or your own car drive through.
+- **Motion Blur:** a rolling shot (the background streaks sideways) or a zoom burst, keeping one of the add-on's numbered squares sharp. Put your car in that square.
+- **Dreamy Glow:** a soft glow round highlights, like a Black Pro-Mist filter.
+- **Lens Flare:** ghosts and a halo from bright lights, like light bouncing inside a lens.
+- **Light Leak:** a warm film light leak drifting in from an edge.
+- **Tilt-Shift:** the miniature look, with a sharp band and blur above and below.
+
+Roblox gives ReShade no depth, so the blurs go by screen position, not real distance or movement. A good order in ReShade's list is Long Exposure, Motion Blur, Tilt-Shift, Dreamy Glow, Lens Flare, Light Leak, then Cinematic Look last.
+
 Ctrl+F6 and Ctrl+F5 were picked because Unishade doesn't use them (its keys are Home, F7, Ctrl+F8, Ctrl+F9, Ctrl+F10 and Ctrl+PageUp/PageDown). The keys are read in every app while Unishade runs, so pressing them elsewhere works too.
 
 ## Requirements
@@ -61,7 +72,7 @@ To remove it, delete the file.
 
 1. Download **CinematicShots-effects** from the same Actions run and unzip it. It has a `Shaders` and a `Textures` folder.
 2. Copy both into `reshade-shaders` inside Unishade's folder (`%LOCALAPPDATA%\Programs\Unishade\reshade-shaders`), merging with the folders already there. Unishade's Setup keeps effects you add there when it updates; uninstalling only removes them if you tick the option to delete your settings.
-3. In ReShade's **Home** tab, tick **Daily Drive (Cinematic Shots)** for everyday play, or **Cinematic Look (Cinematic Shots)** for filming. Drag Cinematic Look to the bottom of the list, so the grain and bars go over every other effect.
+3. In ReShade's **Home** tab, tick **Daily Drive (Cinematic Shots)** for everyday play, or **Cinematic Look (Cinematic Shots)** and any of the Photo FX effects for filming. Drag Cinematic Look to the bottom of the list, so the grain and bars go over every other effect.
 4. Save each into its own preset, and link the filming one to a shot in the shot list if you like.
 
 `tools/fxcheck` builds ReShade 6.8.0's own effect compiler on Linux; CI uses it to check every effect in `shaders/` compiles, and runs the generated code through glslang and spirv-val. CI also checks the LUT images match `tools/luts/make_luts.py`.
