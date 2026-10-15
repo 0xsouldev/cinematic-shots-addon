@@ -6,6 +6,7 @@
 #include <imgui.h>
 #include <reshade.hpp>
 
+#include <cstdio>
 #include <iterator>
 
 // Shown in ReShade's add-on list.
@@ -31,6 +32,29 @@ constexpr AspectRatio kRatios[] = {
     { "9:16 Vertical (Shorts, TikTok)", 9.0f / 16.0f },
 };
 
+// Squares are numbered like a phone keypad: 1 2 3 on top, 4 5 6 in the middle, 7 8 9 at the bottom.
+struct Shot
+{
+    const char* name;
+    const char* hint; // one line, shown on screen while driving
+    const char* how;
+};
+
+constexpr Shot kShots[] = {
+    { "Low tracking shot", "Camera low beside the car. Car on the 4 or 6 line, space ahead.",
+      "Zoom in and drop the camera to wheel height, side-on. Put the car on the left or right line with open space in the direction it drives. Drive steady so it feels fast and smooth." },
+    { "Chase cam", "Behind and a bit above. Car in 8, horizon on the top line.",
+      "Sit behind the car, slightly above it. Keep it bottom middle (square 8) and let the road lead into the distance, with the horizon on the top line. Works great on long straights and curves." },
+    { "Front three-quarter", "Front corner of the car. Car on the 4 or 6 line, wheels turned.",
+      "The classic car-ad angle: camera at a front corner so you see the front and one side. Car on a side line. Turn the front wheels slightly towards the camera when parked." },
+    { "Low-angle hero", "Camera near the ground looking up. Car fills 4, 5 and 6.",
+      "Park, then bring the camera right down and tilt up at the front of the car. It makes the car look huge and powerful. Sky or streetlights behind it look great." },
+    { "Detail close-up", "Zoom right in on a detail. Put it where two lines cross.",
+      "Pick one detail: a wheel, headlight, badge or exhaust. Fill the frame with it and put it on a crossing point. Depth of field (blurry background) makes this shot pop." },
+    { "Wide establishing shot", "Zoom all the way out. Small car in 7 or 9, horizon on the top line.",
+      "Show the world: a tiny car on a big road, bridge or city. Car low in a bottom corner, lots of sky or scenery. Best at golden hour or night." },
+};
+
 struct Settings
 {
     bool guides = true;
@@ -39,6 +63,9 @@ struct Settings
     bool numbers = false;
     int ratio = 0;
     int barOpacity = 100; // percent
+    int shotsDone = 0; // one bit per shot
+    int currentShot = 0;
+    bool shotHint = true;
 };
 
 Settings settings;
@@ -55,8 +82,13 @@ void Load()
     reshade::get_config_value(nullptr, kSection, "BarOpacity", settings.barOpacity);
     if (settings.ratio < 0 || settings.ratio >= static_cast<int>(std::size(kRatios)))
         settings.ratio = 0;
+    reshade::get_config_value(nullptr, kSection, "ShotsDone", settings.shotsDone);
+    reshade::get_config_value(nullptr, kSection, "CurrentShot", settings.currentShot);
+    reshade::get_config_value(nullptr, kSection, "ShotHint", settings.shotHint);
     if (settings.barOpacity < 0 || settings.barOpacity > 100)
         settings.barOpacity = 100;
+    if (settings.currentShot < 0 || settings.currentShot >= static_cast<int>(std::size(kShots)))
+        settings.currentShot = 0;
     loaded = true;
 }
 
@@ -68,6 +100,9 @@ void Save()
     reshade::set_config_value(nullptr, kSection, "Numbers", settings.numbers);
     reshade::set_config_value(nullptr, kSection, "AspectRatio", settings.ratio);
     reshade::set_config_value(nullptr, kSection, "BarOpacity", settings.barOpacity);
+    reshade::set_config_value(nullptr, kSection, "ShotsDone", settings.shotsDone);
+    reshade::set_config_value(nullptr, kSection, "CurrentShot", settings.currentShot);
+    reshade::set_config_value(nullptr, kSection, "ShotHint", settings.shotHint);
 }
 
 // Ctrl+F6 shows or hides the guides. Unishade's own keys are Home, F7, Ctrl+F8, Ctrl+F9, Ctrl+F10 and Ctrl+PageUp/Down.
@@ -90,7 +125,7 @@ void DrawGuides(reshade::api::effect_runtime*)
     if (!loaded)
         Load();
     PollHotkey();
-    if (!settings.guides || (!settings.letterbox && !settings.thirds))
+    if (!settings.guides)
         return;
 
     const ImVec2 screen = ImGui::GetIO().DisplaySize;
@@ -154,6 +189,19 @@ void DrawGuides(reshade::api::effect_runtime*)
                 }
         }
     }
+
+    // The current shot's one-line hint, centred at the bottom of the framed area.
+    if (settings.shotHint)
+    {
+        char text[256];
+        snprintf(text, sizeof(text), "Shot %d/%d  %s: %s", settings.currentShot + 1, static_cast<int>(std::size(kShots)),
+            kShots[settings.currentShot].name, kShots[settings.currentShot].hint);
+        const ImVec2 size = ImGui::CalcTextSize(text);
+        const ImVec2 pos((min.x + max.x - size.x) / 2.0f, max.y - size.y - 14.0f);
+        draw->AddRectFilled(ImVec2(pos.x - 8.0f, pos.y - 4.0f), ImVec2(pos.x + size.x + 8.0f, pos.y + size.y + 4.0f),
+            IM_COL32(0, 0, 0, 150), 4.0f);
+        draw->AddText(pos, IM_COL32(255, 255, 255, 230), text);
+    }
 }
 
 void DrawCinematicTab(reshade::api::effect_runtime*)
@@ -188,6 +236,43 @@ void DrawCinematicTab(reshade::api::effect_runtime*)
     ImGui::Spacing();
     ImGui::TextDisabled("Tip: put the car on a line or where two lines cross, with space ahead of it.");
     ImGui::TextDisabled("Guides are for framing only and are not in Unishade's screenshots.");
+
+    int done = 0;
+    for (int i = 0; i < static_cast<int>(std::size(kShots)); ++i)
+        done += (settings.shotsDone >> i) & 1;
+    char title[64];
+    snprintf(title, sizeof(title), "Shot list (%d/%d done)", done, static_cast<int>(std::size(kShots)));
+    ImGui::SeparatorText(title);
+    changed |= ImGui::Checkbox("Show the picked shot's hint on screen (with the guides)", &settings.shotHint);
+    ImGui::TextDisabled("Pick a shot, line it up, then tick it off.");
+    for (int i = 0; i < static_cast<int>(std::size(kShots)); ++i)
+    {
+        ImGui::PushID(i);
+        bool shotDone = (settings.shotsDone >> i) & 1;
+        if (ImGui::Checkbox("##done", &shotDone))
+        {
+            settings.shotsDone ^= 1 << i;
+            changed = true;
+        }
+        ImGui::SameLine();
+        if (ImGui::RadioButton(kShots[i].name, settings.currentShot == i))
+        {
+            settings.currentShot = i;
+            changed = true;
+        }
+        if (settings.currentShot == i)
+        {
+            ImGui::Indent();
+            ImGui::TextWrapped("%s", kShots[i].how);
+            ImGui::Unindent();
+        }
+        ImGui::PopID();
+    }
+    if (done > 0 && ImGui::Button("Reset ticks"))
+    {
+        settings.shotsDone = 0;
+        changed = true;
+    }
 
     if (changed)
         Save();

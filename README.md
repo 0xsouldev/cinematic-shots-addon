@@ -10,6 +10,8 @@ It loads into Unishade's own process, alongside ReShade. Unishade captures the R
 
 The guides are for framing only: Unishade's screenshots leave them out. A recording that captures Unishade's window, such as OBS window capture, will include them, so hide them with Ctrl+F6 before recording. To share a frame with the grid on it, use Windows' Snipping Tool (Win+Shift+S).
 
+**Coached shot list.** Six classic car shots (low tracking, chase cam, front three-quarter, low-angle hero, detail close-up and wide establishing), each with how-to tips that use the numbered squares. Pick one and its one-line hint shows at the bottom of the screen with the guides, so you can line it up while driving. Tick shots off as you get them; progress is saved.
+
 Ctrl+F6 was picked because Unishade doesn't use it (its keys are Home, F7, Ctrl+F8, Ctrl+F9, Ctrl+F10 and Ctrl+PageUp/PageDown). The key is read in every app while Unishade runs, so pressing Ctrl+F6 elsewhere also toggles the guides.
 
 ## Requirements
