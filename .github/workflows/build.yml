@@ -23,21 +23,30 @@ jobs:
           path: build/Release/CinematicShots.addon64
           archive: false
           if-no-files-found: error
+      # Laid out like reshade-shaders, so it unzips straight into Unishade's reshade-shaders folder.
+      - name: Gather effects
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force effects/Shaders, effects/Textures | Out-Null
+          Copy-Item shaders/*.fx effects/Shaders
+          Copy-Item textures/*.png effects/Textures
       - uses: actions/upload-artifact@v7
         with:
-          path: shaders/CinematicLook.fx
-          archive: false
+          name: CinematicShots-effects
+          path: effects
           if-no-files-found: error
 
   effects:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
-      - name: Install glslang and SPIRV-Tools
-        run: sudo apt-get update && sudo apt-get install -y glslang-tools spirv-tools
+      - name: Install glslang, SPIRV-Tools, NumPy and Pillow
+        run: sudo apt-get update && sudo apt-get install -y glslang-tools spirv-tools python3-numpy python3-pil
       - name: Build fxcheck (ReShade 6.8.0's effect compiler)
         run: |
           cmake -S tools/fxcheck -B fxcheck-build -DCMAKE_BUILD_TYPE=Release
           cmake --build fxcheck-build --parallel
       - name: Check effects
         run: tools/fxcheck/check.sh fxcheck-build/fxcheck
+      - name: Check the LUTs match tools/luts/make_luts.py
+        run: python3 tools/luts/make_luts.py --check
