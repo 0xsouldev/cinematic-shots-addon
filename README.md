@@ -12,6 +12,15 @@ The guides are for framing only: Unishade's screenshots leave them out. A record
 
 **Coached shot list.** Six classic car shots (low tracking, chase cam, front three-quarter, low-angle hero, detail close-up and wide establishing), each with how-to tips that use the numbered squares. Pick one and its one-line hint shows at the bottom of the screen with the guides, so you can line it up while driving. Tick shots off as you get them; progress is saved.
 
+**Cinematic Look effect.** `CinematicLook.fx` is our own ReShade effect that does a film's finishing touches in one go:
+
+- **Film glow:** halation (the red-orange glow real film gets round bright lights) and an anamorphic streak (the thin blue horizontal flare of widescreen movie lenses). Great on headlights, street lights and sunsets.
+- **Colour grade:** pick a look: Blockbuster (teal & orange), Golden hour, Night chase, Bleach bypass or Vintage film, plus a strength slider and exposure.
+- **Lens and film:** subtle chromatic aberration, a vignette, and moving film grain that sits in the mid-tones like real film.
+- **Black bars (optional):** real 2.39:1, 2.00:1 or 1.85:1 bars, baked into screenshots and recordings, unlike the add-on's framing guides.
+
+Unlike the guides, everything this effect does ends up in your screenshots and recordings.
+
 Ctrl+F6 was picked because Unishade doesn't use it (its keys are Home, F7, Ctrl+F8, Ctrl+F9, Ctrl+F10 and Ctrl+PageUp/PageDown). The key is read in every app while Unishade runs, so pressing Ctrl+F6 elsewhere also toggles the guides.
 
 ## Requirements
@@ -41,6 +50,15 @@ GitHub Actions also builds it on every push; download `CinematicShots.addon64` f
 If it doesn't show up, check `ReShade.log` in the same folder for the line `Searching for add-ons` and any error after it.
 
 To remove it, delete the file.
+
+### Install the effect
+
+1. Download `CinematicLook.fx` from the same Actions run (or take it from `shaders/` in this repo).
+2. Copy it into `reshade-shaders\Shaders` inside Unishade's folder (`%LOCALAPPDATA%\Programs\Unishade\reshade-shaders\Shaders`). Unishade's Setup keeps effects you add there when it updates; uninstalling only removes them if you tick the option to delete your settings.
+3. In ReShade's **Home** tab, tick **Cinematic Look (Cinematic Shots)** and drag it to the bottom of the list, so the grain and bars go over every other effect.
+4. Save it into a preset, and link that preset to a shot in the shot list if you like.
+
+`tools/fxcheck` builds ReShade 6.8.0's own effect compiler on Linux; CI uses it to check every effect in `shaders/` compiles, and runs the generated code through glslang and spirv-val.
 
 ## Versions
 
