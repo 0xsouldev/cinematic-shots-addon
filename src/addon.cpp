@@ -8,6 +8,7 @@
 
 #include <cstdio>
 #include <iterator>
+#include <string>
 
 // Shown in ReShade's add-on list.
 extern "C" __declspec(dllexport) const char* NAME = "Cinematic Shots";
@@ -66,11 +67,14 @@ struct Settings
     int shotsDone = 0; // one bit per shot
     int currentShot = 0;
     bool shotHint = true;
+    bool switchPresets = true;
+    std::string shotPresets[std::size(kShots)]; // full preset paths, empty when none is linked
 };
 
 Settings settings;
 bool loaded = false;
 bool hotkeyWasDown = false;
+bool nextShotWasDown = false;
 
 void Load()
 {
@@ -85,6 +89,15 @@ void Load()
     reshade::get_config_value(nullptr, kSection, "ShotsDone", settings.shotsDone);
     reshade::get_config_value(nullptr, kSection, "CurrentShot", settings.currentShot);
     reshade::get_config_value(nullptr, kSection, "ShotHint", settings.shotHint);
+    reshade::get_config_value(nullptr, kSection, "SwitchPresets", settings.switchPresets);
+    for (size_t i = 0; i < std::size(kShots); ++i)
+    {
+        char key[32], path[1024];
+        size_t size = sizeof(path);
+        snprintf(key, sizeof(key), "ShotPreset%zu", i);
+        if (reshade::get_config_value(nullptr, kSection, key, path, &size))
+            settings.shotPresets[i] = path;
+    }
     if (settings.barOpacity < 0 || settings.barOpacity > 100)
         settings.barOpacity = 100;
     if (settings.currentShot < 0 || settings.currentShot >= static_cast<int>(std::size(kShots)))
@@ -103,12 +116,61 @@ void Save()
     reshade::set_config_value(nullptr, kSection, "ShotsDone", settings.shotsDone);
     reshade::set_config_value(nullptr, kSection, "CurrentShot", settings.currentShot);
     reshade::set_config_value(nullptr, kSection, "ShotHint", settings.shotHint);
+    reshade::set_config_value(nullptr, kSection, "SwitchPresets", settings.switchPresets);
+    for (size_t i = 0; i < std::size(kShots); ++i)
+    {
+        char key[32];
+        snprintf(key, sizeof(key), "ShotPreset%zu", i);
+        reshade::set_config_value(nullptr, kSection, key, settings.shotPresets[i].c_str());
+    }
 }
 
-// Ctrl+F6 shows or hides the guides. Unishade's own keys are Home, F7, Ctrl+F8, Ctrl+F9, Ctrl+F10 and Ctrl+PageUp/Down.
-// The game window has focus while playing, not Unishade's, so the key state is read directly instead of from ReShade.
-void PollHotkey()
+std::string CurrentPresetPath(reshade::api::effect_runtime* runtime)
 {
+    char path[1024] = "";
+    runtime->get_current_preset_path(path);
+    return path;
+}
+
+// The file name without its folder, for showing in the panel.
+const char* FileName(const std::string& path)
+{
+    const size_t slash = path.find_last_of("\\/");
+    return path.c_str() + (slash == std::string::npos ? 0 : slash + 1);
+}
+
+// ReShade would start an empty preset at a missing path, so a linked preset that was deleted or renamed is skipped.
+bool PresetExists(const std::string& path)
+{
+    wchar_t wide[1024];
+    if (!MultiByteToWideChar(CP_UTF8, 0, path.c_str(), -1, wide, static_cast<int>(std::size(wide))))
+        return false;
+    const DWORD attributes = GetFileAttributesW(wide);
+    return attributes != INVALID_FILE_ATTRIBUTES && !(attributes & FILE_ATTRIBUTE_DIRECTORY);
+}
+
+// Unishade notices preset switches made outside its menu and follows them, so switching here doesn't fight it.
+void PickShot(reshade::api::effect_runtime* runtime, int shot)
+{
+    settings.currentShot = shot;
+    const std::string& preset = settings.shotPresets[shot];
+    if (settings.switchPresets && !preset.empty() && preset != CurrentPresetPath(runtime) && PresetExists(preset))
+        runtime->set_current_preset_path(preset.c_str());
+}
+
+// Ctrl+F6 shows or hides the guides and Ctrl+F5 picks the next shot. Unishade's own keys are Home, F7, Ctrl+F8, Ctrl+F9, Ctrl+F10 and Ctrl+PageUp/Down.
+// The game window has focus while playing, not Unishade's, so the key state is read directly instead of from ReShade.
+void PollHotkey(reshade::api::effect_runtime* runtime)
+{
+    // Ctrl+F5 moves on to the next shot, switching to its preset when one is linked.
+    const bool next = (GetAsyncKeyState(VK_CONTROL) & 0x8000) && (GetAsyncKeyState(VK_F5) & 0x8000);
+    if (next && !nextShotWasDown)
+    {
+        PickShot(runtime, (settings.currentShot + 1) % static_cast<int>(std::size(kShots)));
+        Save();
+    }
+    nextShotWasDown = next;
+
     const bool down = (GetAsyncKeyState(VK_CONTROL) & 0x8000) && (GetAsyncKeyState(VK_F6) & 0x8000);
     if (down && !hotkeyWasDown)
     {
@@ -120,11 +182,11 @@ void PollHotkey()
 
 // Runs every frame after the effects. The background draw list sits under every ImGui window, so menus stay readable.
 // Unishade takes its screenshots before this is drawn, so the guides never end up in them.
-void DrawGuides(reshade::api::effect_runtime*)
+void DrawGuides(reshade::api::effect_runtime* runtime)
 {
     if (!loaded)
         Load();
-    PollHotkey();
+    PollHotkey(runtime);
     if (!settings.guides)
         return;
 
@@ -204,7 +266,7 @@ void DrawGuides(reshade::api::effect_runtime*)
     }
 }
 
-void DrawCinematicTab(reshade::api::effect_runtime*)
+void DrawCinematicTab(reshade::api::effect_runtime* runtime)
 {
     if (!loaded)
         Load();
@@ -244,7 +306,8 @@ void DrawCinematicTab(reshade::api::effect_runtime*)
     snprintf(title, sizeof(title), "Shot list (%d/%d done)", done, static_cast<int>(std::size(kShots)));
     ImGui::SeparatorText(title);
     changed |= ImGui::Checkbox("Show the picked shot's hint on screen (with the guides)", &settings.shotHint);
-    ImGui::TextDisabled("Pick a shot, line it up, then tick it off.");
+    changed |= ImGui::Checkbox("Switch to the shot's preset when I pick it", &settings.switchPresets);
+    ImGui::TextDisabled("Pick a shot (or press Ctrl+F5 for the next one), line it up, then tick it off.");
     for (int i = 0; i < static_cast<int>(std::size(kShots)); ++i)
     {
         ImGui::PushID(i);
@@ -257,13 +320,35 @@ void DrawCinematicTab(reshade::api::effect_runtime*)
         ImGui::SameLine();
         if (ImGui::RadioButton(kShots[i].name, settings.currentShot == i))
         {
-            settings.currentShot = i;
+            PickShot(runtime, i);
             changed = true;
+        }
+        if (!settings.shotPresets[i].empty())
+        {
+            ImGui::SameLine();
+            if (PresetExists(settings.shotPresets[i]))
+                ImGui::TextDisabled("(%s)", FileName(settings.shotPresets[i]));
+            else
+                ImGui::TextDisabled("(%s is missing)", FileName(settings.shotPresets[i]));
         }
         if (settings.currentShot == i)
         {
             ImGui::Indent();
             ImGui::TextWrapped("%s", kShots[i].how);
+            if (ImGui::Button("Link the current preset to this shot"))
+            {
+                settings.shotPresets[i] = CurrentPresetPath(runtime);
+                changed = true;
+            }
+            if (!settings.shotPresets[i].empty())
+            {
+                ImGui::SameLine();
+                if (ImGui::Button("Unlink"))
+                {
+                    settings.shotPresets[i].clear();
+                    changed = true;
+                }
+            }
             ImGui::Unindent();
         }
         ImGui::PopID();
